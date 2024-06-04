@@ -40,24 +40,6 @@ class DeviceFunctions:
         # Increments number at end
         else:
             return self.uniqueName(name[0:digits] + str(int(name[digits:]) + 1), digits)
-        
-        """
-        # Recursively loops until unique name created
-        if(not self.listContains(self.choices, name)):
-            return str(name)
-        
-        # Adds number to end if it doesn't have one
-        elif (not name[-1].isdigit()):
-            return self.uniqueName(name + " 1")
-        
-        # Increments numbers at end and increases place value scope
-        elif (name[-1] == 9):
-            return self.uniqueName(name[0:-digits] + " " + str(int(name[-digits:]) + 1), digits + 1)
-
-        # Increments numbers at end
-        elif (not name[-digits].isdigit()):
-            return self.uniqueName(name[0:-digits] + " " + str(int(name[-digits:]) + 1), digits)
-        """
 
     # Rewrites choices file based on choices list
     def updateChoices(self):
@@ -210,6 +192,56 @@ class KeyboardFunctions(DeviceFunctions):
                 for i in range(self.repeats):
                     time.sleep(self.delay)
                     kb.play(event)
+
+        # Clears records
+        elif(action == "CLEAR"):
+            super().clearRecords()
+
+class PasteFunctions(DeviceFunctions):
+    speed = 9
+
+    def __init__(self):
+        super().__init__()
+        self.recordsFile = "save files\\pasteRecords.pkl"
+
+        # Finding or creating the avaliable options based on choices file
+        if (not os.path.isfile("save files\\pasteChoices.pkl")):
+            self.choicesFile = "save files\\pasteChoices.pkl"
+            with open(self.choicesFile, 'wb') as choices:
+                pickle.dump(self.choices, choices)
+        else:
+            self.choicesFile = "save files\\pasteChoices.pkl"
+            with open(self.choicesFile, "rb") as choices:
+                self.choices = pickle.load(choices)
+            if(not len(self.choices) == 0):
+                self.choice = self.choices[0]
+                self.delChoice = self.choices[0]
+
+    # Performs selected action for keyboard
+    def pickAction(self, action, content=""):
+
+        # Record keyboard and store in file
+        if(action == "SAVE"):
+            with open(self.recordsFile, "ab") as record:
+                data = str(self.speed) + content
+                pickle.dump(data, record)
+            self.updateChoices()
+
+        # Replay selection and implements any delays
+        elif(action == "REPLAY"):
+            index = self.choices.index(str(self.choice))
+            data = self.getEvents(index)
+            playSpeed = 1/(int(data[0]) * int(data[0]))
+            text = data[1:len(data)-1]
+
+            # Checks for whether to delay each time or just the start
+            if(not self.perLoop):
+                time.sleep(self.delay)
+                kb.write(text, playSpeed)
+            else:
+                for i in range(self.repeats):
+                    time.sleep(self.delay)
+                    kb.write(text, playSpeed)
 
         # Clears records
         elif(action == "CLEAR"):

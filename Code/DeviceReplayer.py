@@ -1,18 +1,19 @@
 import customtkinter as ctk
 import keyboard as kb
-from DeviceFunctions import MouseFunctions, KeyboardFunctions
+from DeviceFunctions import MouseFunctions, KeyboardFunctions, PasteFunctions
 from ReplayQueue import replayQueue
 
 # Creating recording mouse and keyboard objects
 clicker = MouseFunctions()
 board = KeyboardFunctions()
+paste = PasteFunctions()
 q = replayQueue()
 
 # Appearance settings
 ctk.set_default_color_theme("blue")
 ctk.set_appearance_mode("system")
 app = ctk.CTk()
-app.geometry("380x420")
+app.geometry("480x420")
 app.resizable(False, False)
 app.title("Keyboard and Mouse Replayer")
 
@@ -20,40 +21,49 @@ app.title("Keyboard and Mouse Replayer")
 title = ctk.CTkLabel(app, text = "Harrison's Keyboard and Mouse Replayer")
 title.grid(row = 0, rowspan = 1, columnspan = 6, pady = 8)
 
-tabs = ctk.CTkTabview(app, width = 360, height = 330)
+tabs = ctk.CTkTabview(app, width = 460, height = 330)
 tabs.grid(row = 1, column = 2, padx = 8)
 tabs.add("Mouse Controls")
 tabs.add("Keyboard Controls")
+tabs.add("Paste Text")
 tabs.add("Queue")
 tabs.add("Settings")
 
 mouseFrame = tabs.tab("Mouse Controls")
 mRecordFrame = ctk.CTkFrame(mouseFrame, fg_color= "#3b3b3b")
-mRecordFrame.grid(row = 0, padx = 8, pady = 8)
+mRecordFrame.grid(row = 0, padx = 60, pady = 8)
 mReplayFrame = ctk.CTkFrame(mouseFrame, fg_color= "#3b3b3b")
-mReplayFrame.grid(row = 1, padx = 8, pady = 8)
+mReplayFrame.grid(row = 1, padx = 60, pady = 8)
 mDeleteFrame = ctk.CTkFrame(mouseFrame, fg_color= "#3b3b3b")
-mDeleteFrame.grid(row = 2, padx = 8, pady = 8)
+mDeleteFrame.grid(row = 2, padx = 60, pady = 8)
 
 kbFrame = tabs.tab("Keyboard Controls")
 kbRecordFrame = ctk.CTkFrame(kbFrame, fg_color= "#3b3b3b")
-kbRecordFrame.grid(row = 0, padx = 8, pady = 0)
+kbRecordFrame.grid(row = 0, padx = 60, pady = 8)
 kbReplayFrame = ctk.CTkFrame(kbFrame, fg_color= "#3b3b3b")
-kbReplayFrame.grid(row = 1, padx = 8, pady = 0)
+kbReplayFrame.grid(row = 2, padx = 60, pady = 8)
 kbDeleteFrame = ctk.CTkFrame(kbFrame, fg_color= "#3b3b3b")
-kbDeleteFrame.grid(row = 2, padx = 8, pady = 0)
+kbDeleteFrame.grid(row = 3, padx = 60, pady = 8)
+
+pasteFrame = tabs.tab("Paste Text")
+pasteRecordFrame = ctk.CTkFrame(pasteFrame, fg_color= "#3b3b3b")
+pasteRecordFrame.grid(row = 0, padx = 46, pady = 8)
+pasteManagerFrame = ctk.CTkFrame(pasteFrame, fg_color= "#3b3b3b")
+pasteManagerFrame.grid(row = 1, padx = 60, pady = 8)
 
 queueFrame = tabs.tab("Queue")
-qDelayFrame = ctk.CTkFrame(queueFrame)
-qDelayFrame.place(x = 8, y = 54)
+qOptionsFrame = ctk.CTkFrame(queueFrame, fg_color= "#3b3b3b")
+qOptionsFrame.place(x = 40, y= 8)
+qDelayFrame = ctk.CTkFrame(queueFrame, fg_color= "#3b3b3b")
+qDelayFrame.place(x = 40, y = 70)
 scrollFrame = ctk.CTkScrollableFrame(queueFrame, width = 80, fg_color= "#3b3b3b")
-scrollFrame.place(x = 240, y = 8)
+scrollFrame.place(x = 300, y = 8)
 
 settingsTab = tabs.tab("Settings")
 changeKeyFrame = ctk.CTkFrame(settingsTab, width = 333, height = 46, fg_color= "#3b3b3b")
-changeKeyFrame.grid(row = 0, column = 0, padx = 8, pady = 8)
+changeKeyFrame.grid(row = 0, column = 0, padx = 60, pady = 8)
 sDelayFrame = ctk.CTkFrame(settingsTab, width = 333, height = 46, fg_color= "#3b3b3b")
-sDelayFrame.grid(row = 1, column = 0, padx = 8, pady = 8)
+sDelayFrame.grid(row = 1, column = 0, padx = 60, pady = 8)
 
 
 textFrame = ctk.CTkFrame(app, border_width= 1, fg_color= "#3b3b3b")
@@ -72,6 +82,11 @@ def changeStop():
     board.stopKey = str(newKey)
     detailer.configure(text = "Stop key changed to \'" + clicker.stopKey + '\'')
 
+def resetStop():
+    clicker.stopKey = 'esc'
+    board.stopKey = 'esc'
+    detailer.configure(text = "Stop key changed to esc")
+
 # Sets a delay for replays
 def setDelay():
     if(not delayEntry.get().isdigit()):
@@ -79,6 +94,7 @@ def setDelay():
     else:
         clicker.delay = int(delayEntry.get())
         board.delay = int(delayEntry.get())
+        paste.delay = int(delayEntry.get())
         detailer.configure(text = "Delay set to " + str(delayEntry.get()) + " seconds")
 
 # Sets delay for each replay or the start only
@@ -295,7 +311,7 @@ def kbEnqueue():
 
         # Implements number of repeats
         if (kbRepeatsEntry.get() == ''):
-            board.repeats = 1;
+            board.repeats = 1
         elif(kbRepeatsEntry.get().isdigit()):
             board.repeats = int(kbRepeatsEntry.get())
         else:
@@ -334,6 +350,64 @@ def kbOptions(choice):
 # Menu function to update keyboard delChoice
 def kbDelOptions(choice):
     board.delChoice = choice
+
+# Methods for pasting text
+
+def pasteSpeed(choice):
+    paste.speed = int(choice)
+
+def pasteReplay(action = "REPLAY"):
+    if (len(paste.choices) == 0):
+        detailer.configure(text = "There are no records.")
+    else:
+        detailer.configure(text = "Replaying text...")
+        app.update()
+        paste.pickAction(action)
+        detailer.configure(text = "Replay complete.")
+
+# Paste only uses choice for the delete and the replay for size sake
+def pasteOptions(choice):
+    paste.choice = choice
+    paste.delChoice = choice
+
+def pasteSave(action = "SAVE"):
+    change = paste.choice == ""
+    detailer.configure(text = "Text recorded.")
+    app.update()
+    paste.appendChoice(pasteNameEntry.get())
+    paste.pickAction(action, pasteBox.get(0.0, "end"))
+    pasteOptionMenu.configure(values = paste.choices)
+    detailer.configure(text = "Text saved.")
+    if (change):
+        newChoice = paste.choices[0]
+        pasteOptionMenu.set(newChoice)
+        pasteOptions(newChoice)
+
+def pasteDelete():
+    if (len(paste.choices) == 0):
+        detailer.configure(text = "There are no records")
+    else:
+        paste.delRecord()
+        detailer.configure(text = "Selected text record deleted.")
+        pasteOptionMenu.configure(values = paste.choices)
+        if (len(paste.choices) == 0):
+            clicker.pickAction("CLEAR")
+            pasteOptionMenu.set("Select Record")
+            paste.choice = ""
+            paste.delChoice = ""
+        else:
+            pasteOptionMenu.set(paste.choices[0])
+            pasteOptions(paste.choices[0])
+    emptyQueue(True)
+
+def pasteEnqueue():
+    if(paste.choice == ""):
+        detailer.configure(text = "No record selected.")
+    else:
+        # Adds to queue
+        q.enqueue([paste, paste.choice, 1])
+        scrollQueue.configure(text = q.getString())
+        detailer.configure(text = "Added to queue.")
 
 "======================================================================================================"
 
@@ -393,9 +467,39 @@ kbDeleteButton.grid(row = 0, column = 1, padx = 8, pady = 8)
 kbClearButton = ctk.CTkButton(kbDeleteFrame, text = "Clear Keyboard Records", command = kbClear, width = 150, height = 30)
 kbClearButton.grid(row = 1, column = 1, padx = 8, pady = 8)
 
+# Paste Interface
+pasteBox = ctk.CTkTextbox(pasteRecordFrame, width = 320, height = 96)
+pasteBox.grid(row = 0, column = 0, columnspan = 3, padx = 8, pady = 8)
+
+pasteNameEntry = ctk.CTkEntry(pasteRecordFrame, placeholder_text= "Recording Name", width = 150, height = 30)
+pasteNameEntry.grid(row = 1, column = 0, padx = 8, pady = 8)
+
+speedValues = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+pasteSpeedMenu = ctk.CTkOptionMenu(pasteRecordFrame, values = speedValues, command = pasteSpeed, width = 80, height = 30)
+pasteSpeedMenu.grid(row = 1, column = 1, padx = 8, pady = 8)
+pasteSpeedMenu.set("Speed")
+
+pasteSubmitButton = ctk.CTkButton(pasteRecordFrame, text = "Save", command = pasteSave, width = 70, height = 30)
+pasteSubmitButton.grid(row = 1, column = 2, padx = 8, pady = 8)
+
+pasteOptionMenu = ctk.CTkOptionMenu(pasteManagerFrame, values = paste.choices, command = pasteOptions, width = 150, height = 30)
+pasteOptionMenu.grid(row = 0, column = 0, padx = 8, pady = 8)
+
+pasteReplayButton = ctk.CTkButton(pasteManagerFrame, text = "Replay Text Record", command = pasteReplay, width = 150, height = 30)
+pasteReplayButton.grid(row = 0, column = 1, padx = 8, pady = 8)
+
+pasteQueueButton = ctk.CTkButton(pasteManagerFrame, text = "Add to Queue", command = pasteEnqueue, width = 150, height = 30)
+pasteQueueButton.grid(row = 1, column = 1, padx = 8, pady = 8)
+
+pasteDeleteButton = ctk.CTkButton(pasteManagerFrame, text = "Delete Text Record", command = pasteDelete, width = 150, height = 30)
+pasteDeleteButton.grid(row = 1, column = 0, padx = 8, pady = 8)
+
 # Queue interface
-playQueueButton = ctk.CTkButton(queueFrame, text = "Play Queue", command = playQueue, width = 100, height = 30)
-playQueueButton.place(x = 132, y = 18)
+playQueueButton = ctk.CTkButton(qOptionsFrame, text = "Play Queue", command = playQueue, width = 100, height = 30)
+playQueueButton.grid(row = 0, column = 0, padx = 8, pady = 8)
+
+emptyQueueButton = ctk.CTkButton(qOptionsFrame, text = "Clear Queue", command = emptyQueue, width = 100, height = 30)
+emptyQueueButton.grid(row = 0, column = 1, padx = 8, pady = 8)
 
 delayQEntry = ctk.CTkEntry(qDelayFrame, placeholder_text= "Delay seconds", width = 100, height = 30)
 delayQEntry.grid(row = 0, column = 0, padx = 8, pady = 8)
@@ -403,15 +507,15 @@ delayQEntry.grid(row = 0, column = 0, padx = 8, pady = 8)
 delayQButton = ctk.CTkButton(qDelayFrame, text  = "Delay Queue", command = setQDelay, width = 100, height = 30)
 delayQButton.grid(row = 0, column = 1, padx = 8, pady = 8)
 
-emptyQueueButton = ctk.CTkButton(queueFrame, text = "Clear Queue", command = emptyQueue, width = 100, height = 30)
-emptyQueueButton.place(x = 132, y = 108)
-
 scrollQueue = ctk.CTkLabel(scrollFrame, text = q.getString())
 scrollQueue.grid()
 
 # Settings interface
+resetKeyButton = ctk.CTkButton(changeKeyFrame, text = "Reset Stop Button", command = resetStop, width = 150, height = 30)
+resetKeyButton.grid(row = 0, column = 0, padx = 8, pady = 8)
+
 changeKeyButton = ctk.CTkButton(changeKeyFrame, text = "Change Stop Button", command = changeStop, width = 150, height = 30)
-changeKeyButton.place(x = 175, y = 8)
+changeKeyButton.grid(row = 0, column = 1, padx = 8, pady = 8)
 
 delayEntry = ctk.CTkEntry(sDelayFrame, placeholder_text= "Delay seconds", width = 150, height = 30)
 delayEntry.grid(row = 1, column = 0, padx = 8, pady = 8)
@@ -428,11 +532,13 @@ detailer.pack(padx = 16, pady = 1)
 
 "=================================================================================================="
 
-if(len(clicker.choices) == 0):
-    mReplayOptionMenu.set("Replay record")
-    mDeleteOptionMenu.set("Delete record")
-if(len(board.choices) == 0):
-    kbReplayOptionMenu.set("Replay record")
-    kbDeleteOptionMenu.set("Delete record")
+if (len(clicker.choices) == 0):
+    mReplayOptionMenu.set("Replay Record")
+    mDeleteOptionMenu.set("Delete Record")
+if (len(board.choices) == 0):
+    kbReplayOptionMenu.set("Replay Record")
+    kbDeleteOptionMenu.set("Delete Record")
+if (len(paste.choices) == 0):
+    pasteOptionMenu.set("Text Record")
     
 app.mainloop()
